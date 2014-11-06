@@ -165,6 +165,18 @@ module.exports = function (grunt) {
           'dist/css/<%= pkg.name %>.css': 'less/bootstrap.less'
         }
       },
+      compileForce: {
+        options: {
+          strictMath: true,
+          sourceMap: true,
+          outputSourceFiles: true,
+          sourceMapURL: '<%= pkg.name %>-force.css.map',
+          sourceMapFilename: 'dist/css/<%= pkg.name %>-force.css.map'
+        },
+        files: {
+          'dist/css/<%= pkg.name %>-force.css': 'less/bootstrap-force.less'
+        }
+      },
       compileTheme: {
         options: {
           strictMath: true,
@@ -184,6 +196,7 @@ module.exports = function (grunt) {
         },
         files: {
           'dist/css/<%= pkg.name %>.min.css': 'dist/css/<%= pkg.name %>.css',
+          'dist/css/<%= pkg.name %>-force.min.css': 'dist/css/<%= pkg.name %>-force.css',
           'dist/css/<%= pkg.name %>-rtl.min.css': 'dist/css/<%= pkg.name %>-rtl.css',
           'dist/css/<%= pkg.name %>-theme.min.css': 'dist/css/<%= pkg.name %>-theme.css'
         }
@@ -200,6 +213,12 @@ module.exports = function (grunt) {
         },
         src: 'dist/css/<%= pkg.name %>.css'
       },
+      force: {
+        options: {
+          map: true
+        },
+        src: 'dist/css/<%= pkg.name %>-force.css'
+      },
       theme: {
         options: {
           map: true
@@ -207,7 +226,7 @@ module.exports = function (grunt) {
         src: 'dist/css/<%= pkg.name %>-theme.css'
       },
       docs: {
-        src: 'docs/assets/css/docs.css'
+        src: 'docs/assets/css/src/docs.css'
       },
       examples: {
         expand: true,
@@ -437,7 +456,7 @@ module.exports = function (grunt) {
   grunt.registerTask('dist-js', ['concat', 'uglify']);
 
   // CSS distribution task.
-  grunt.registerTask('less-compile', ['less:compileCore', 'less:compileTheme']);
+  grunt.registerTask('less-compile', ['less:compileCore', 'less:compileForce', 'less:compileTheme']);
   grunt.registerTask('dist-css', ['less-compile', 'autoprefixer', 'css_flip', 'usebanner', 'csscomb', 'less:minify', 'cssmin']);
 
   // Docs distribution task.
