@@ -402,6 +402,12 @@ module.exports = function (grunt) {
         replacement: grunt.option('newver'),
         recursive: true
       }
+      removeDoubleNamespace: {
+        path: 'dist/css/<%= pkg.name %>-force.min.css'
+        pattern: '.force .force',
+        replacement: '.force',
+        recursive: false
+      }
     },
 
     'saucelabs-qunit': {
@@ -458,6 +464,7 @@ module.exports = function (grunt) {
   // CSS distribution task.
   grunt.registerTask('less-compile', ['less:compileCore', 'less:compileForce', 'less:compileTheme']);
   grunt.registerTask('dist-css', ['less-compile', 'autoprefixer', 'css_flip', 'usebanner', 'csscomb', 'less:minify', 'cssmin']);
+  grunt.registerTask('remove-double-namespace', 'sed:removeDoubleNamespace');
 
   // Docs distribution task.
   grunt.registerTask('dist-docs', 'copy:docs');
@@ -471,7 +478,7 @@ module.exports = function (grunt) {
   // Version numbering task.
   // grunt change-version-number --oldver=A.B.C --newver=X.Y.Z
   // This can be overzealous, so its changes should always be manually reviewed!
-  grunt.registerTask('change-version-number', 'sed');
+  grunt.registerTask('change-version-number', 'sed:versionNumber');
 
   grunt.registerTask('build-glyphicons-data', generateGlyphiconsData);
 
