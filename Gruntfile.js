@@ -401,9 +401,9 @@ module.exports = function (grunt) {
         })(),
         replacement: grunt.option('newver'),
         recursive: true
-      }
+      },
       removeDoubleNamespace: {
-        path: 'dist/css/<%= pkg.name %>-force.min.css'
+        path: 'dist/css/<%= pkg.name %>-force.css',
         pattern: '.force .force',
         replacement: '.force',
         recursive: false
@@ -463,8 +463,7 @@ module.exports = function (grunt) {
 
   // CSS distribution task.
   grunt.registerTask('less-compile', ['less:compileCore', 'less:compileForce', 'less:compileTheme']);
-  grunt.registerTask('dist-css', ['less-compile', 'autoprefixer', 'css_flip', 'usebanner', 'csscomb', 'less:minify', 'cssmin']);
-  grunt.registerTask('remove-double-namespace', 'sed:removeDoubleNamespace');
+  grunt.registerTask('dist-css', ['less-compile', 'autoprefixer', 'sed:removeDoubleNamespace', 'css_flip', 'usebanner', 'csscomb', 'less:minify', 'cssmin']);
 
   // Docs distribution task.
   grunt.registerTask('dist-docs', 'copy:docs');
