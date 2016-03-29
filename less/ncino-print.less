@@ -1,0 +1,58 @@
+@media print {
+
+  .always-break-after {
+    page-break-after: always;
+  }
+
+  .always-break-before {
+    page-break-before: always;
+  }
+
+  .avoid-break-after {
+    page-break-after: avoid;
+  }
+
+  .avoid-break-before {
+    page-break-before: avoid;
+  }
+
+  .avoid-break-inside {
+    page-break-inside: avoid;
+  }
+
+  .ie10 .avoid-break-inside {
+    page-break-inside: auto;
+  }
+
+  .disabled {
+    opacity: 1;
+    filter: alpha(opacity=100);
+  }
+
+  .popover {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  /* Hide SF header, footer, side bar and background */
+  .bPageHeader,
+  .bPageFooter,
+  .sidebarCell {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  .sfdcBody {
+    background: none;
+  }
+
+  .bodyDiv {
+    box-shadow: none;
+    -webkit-box-shadow: none;
+  }
+
+  .brdPalette {
+    border: none !important;
+  }
+
+}

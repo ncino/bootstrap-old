@@ -177,6 +177,18 @@ module.exports = function (grunt) {
           'dist/css/<%= pkg.name %>-force.css': 'less/bootstrap-force.less'
         }
       },
+      compileFont: {
+        options: {
+          strictMath: true,
+          sourceMap: true,
+          outputSourceFiles: true,
+          sourceMapURL: '<%= pkg.name %>-font.css.map',
+          sourceMapFilename: 'dist/css/<%= pkg.name %>-font.css.map'
+        },
+        files: {
+          'dist/css/<%= pkg.name %>-font.css': 'less/bootstrap-font.less'
+        }
+      },
       compileTheme: {
         options: {
           strictMath: true,
@@ -462,7 +474,7 @@ module.exports = function (grunt) {
   grunt.registerTask('dist-js', ['concat', 'uglify']);
 
   // CSS distribution task.
-  grunt.registerTask('less-compile', ['less:compileCore', 'less:compileForce', 'less:compileTheme']);
+  grunt.registerTask('less-compile', ['less:compileCore', 'less:compileForce', 'less:compileFont', 'less:compileTheme']);
   grunt.registerTask('dist-css', ['less-compile', 'autoprefixer', 'sed:removeDoubleNamespace', 'css_flip', 'usebanner', 'csscomb', 'less:minify', 'cssmin']);
 
   // Docs distribution task.
