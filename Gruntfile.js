@@ -153,6 +153,30 @@ module.exports = function (grunt) {
         sourceMap: true,
         outputSourceFiles: true
       },
+      force: {
+        options: {
+          strictMath: true,
+          sourceMap: true,
+          outputSourceFiles: true,
+          sourceMapURL: '<%= pkg.name %>-force.css.map',
+          sourceMapFilename: 'dist/css/<%= pkg.name %>-force.css.map'
+        },
+        files: {
+          'dist/css/<%= pkg.name %>-force.css': 'less/bootstrap-force.less'
+        }
+      },
+      font: {
+        options: {
+          strictMath: true,
+          sourceMap: true,
+          outputSourceFiles: true,
+          sourceMapURL: '<%= pkg.name %>-font.css.map',
+          sourceMapFilename: 'dist/css/<%= pkg.name %>-font.css.map'
+        },
+        files: {
+          'dist/css/<%= pkg.name %>-font.css': 'less/bootstrap-font.less'
+        }
+      },
       core: {
         options: {
           sourceMapURL: '<%= pkg.name %>.css.map',
@@ -250,6 +274,14 @@ module.exports = function (grunt) {
       theme: {
         src: 'dist/css/<%= pkg.name %>-theme.css',
         dest: 'dist/css/<%= pkg.name %>-theme.min.css'
+      },
+      force: {
+        src: 'dist/css/<%= pkg.name %>-force.css',
+        dest: 'dist/css/<%= pkg.name %>-force.min.css'
+      },
+      font: {
+        src: 'dist/css/<%= pkg.name %>-font.css',
+        dest: 'dist/css/<%= pkg.name %>-font.min.css'
       },
       docs: {
         src: 'docs/assets/css/docs.css',
@@ -393,7 +425,7 @@ module.exports = function (grunt) {
   grunt.registerTask('dist-js', ['concat', 'uglify:core', 'commonjs']);
 
   // CSS distribution task.
-  grunt.registerTask('dist-css', ['less:core', 'less:theme', 'postcss:core', 'postcss:theme', 'cssmin:core', 'cssmin:theme']);
+  grunt.registerTask('dist-css', ['less:core', 'less:theme', 'less:force', 'less:font', 'postcss:core', 'postcss:theme', 'cssmin:core', 'cssmin:theme', 'cssmin:force', 'cssmin:font']);
 
   // Full distribution task.
   grunt.registerTask('dist', ['clean:dist', 'dist-css', 'copy:fonts', 'dist-js']);
