@@ -1,7 +1,7 @@
 /*!
  * Bootstrap's Gruntfile
- * http://getbootstrap.com
- * Copyright 2013-2014 Twitter, Inc.
+ * https://getbootstrap.com/
+ * Copyright 2013-2019 Twitter, Inc.
  * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)
  */
 
@@ -19,8 +19,21 @@ module.exports = function (grunt) {
   var path = require('path');
   var generateGlyphiconsData = require('./grunt/bs-glyphicons-data-generator.js');
   var BsLessdocParser = require('./grunt/bs-lessdoc-parser.js');
+  var getLessVarsData = function () {
+    var filePath = path.join(__dirname, 'less/variables.less');
+    var fileContent = fs.readFileSync(filePath, { encoding: 'utf8' });
+    var parser = new BsLessdocParser(fileContent);
+    return { sections: parser.parseFile() };
+  };
   var generateRawFiles = require('./grunt/bs-raw-files-generator.js');
-  var updateShrinkwrap = require('./grunt/shrinkwrap.js');
+  var generateCommonJSModule = require('./grunt/bs-commonjs-generator.js');
+  var configBridge = grunt.file.readJSON('./grunt/configBridge.json', { encoding: 'utf8' });
+
+  Object.keys(configBridge.paths).forEach(function (key) {
+    configBridge.paths[key].forEach(function (val, i, arr) {
+      arr[i] = path.join('./docs/assets', val);
+    });
+  });
 
   // Project configuration.
   grunt.initConfig({
@@ -30,13 +43,15 @@ module.exports = function (grunt) {
     banner: '/*!\n' +
             ' * Bootstrap v<%= pkg.version %> (<%= pkg.homepage %>)\n' +
             ' * Copyright 2011-<%= grunt.template.today("yyyy") %> <%= pkg.author %>\n' +
-            ' * Licensed under <%= pkg.license.type %> (<%= pkg.license.url %>)\n' +
+            ' * Licensed under the <%= pkg.license %> license\n' +
             ' */\n',
-    jqueryCheck: 'if (typeof jQuery === \'undefined\') { throw new Error(\'Bootstrap\\\'s JavaScript requires jQuery\') }\n\n',
+    jqueryCheck: configBridge.config.jqueryCheck.join('\n'),
+    jqueryVersionCheck: configBridge.config.jqueryVersionCheck.join('\n'),
 
     // Task configuration.
     clean: {
-      dist: ['dist', 'docs/dist']
+      dist: 'dist',
+      docs: 'docs/dist'
     },
 
     jshint: {
@@ -47,16 +62,19 @@ module.exports = function (grunt) {
         options: {
           jshintrc: 'grunt/.jshintrc'
         },
-        src: ['Gruntfile.js', 'grunt/*.js']
+        src: ['Gruntfile.js', 'package.js', 'grunt/*.js']
       },
-      src: {
+      core: {
         src: 'js/*.js'
       },
       test: {
+        options: {
+          jshintrc: 'js/tests/unit/.jshintrc'
+        },
         src: 'js/tests/unit/*.js'
       },
       assets: {
-        src: 'docs/assets/js/src/*.js'
+        src: ['docs/assets/js/src/*.js', 'docs/assets/js/*.js', '!docs/assets/js/*.min.js']
       }
     },
 
@@ -65,29 +83,28 @@ module.exports = function (grunt) {
         config: 'js/.jscsrc'
       },
       grunt: {
-        options: {
-          requireCamelCaseOrUpperCaseIdentifiers: null,
-          requireParenthesesAroundIIFE: true
-        },
         src: '<%= jshint.grunt.src %>'
       },
-      src: {
-        src: '<%= jshint.src.src %>'
+      core: {
+        src: '<%= jshint.core.src %>'
       },
       test: {
         src: '<%= jshint.test.src %>'
       },
       assets: {
+        options: {
+          requireCamelCaseOrUpperCaseIdentifiers: null
+        },
         src: '<%= jshint.assets.src %>'
       }
     },
 
     concat: {
       options: {
-        banner: '<%= banner %>\n<%= jqueryCheck %>',
+        banner: '<%= banner %>\n<%= jqueryCheck %>\n<%= jqueryVersionCheck %>',
         stripBanners: false
       },
-      bootstrap: {
+      core: {
         src: [
           'js/transition.js',
           'js/alert.js',
@@ -109,120 +126,78 @@ module.exports = function (grunt) {
 
     uglify: {
       options: {
-        report: 'min'
+        compress: true,
+        mangle: true,
+        ie8: true,
+        output: {
+          comments: /^!|@preserve|@license|@cc_on/i
+        }
       },
-      bootstrap: {
-        options: {
-          banner: '<%= banner %>'
-        },
-        src: '<%= concat.bootstrap.dest %>',
+      core: {
+        src: '<%= concat.core.dest %>',
         dest: 'dist/js/<%= pkg.name %>.min.js'
       },
       customize: {
-        options: {
-          preserveComments: 'some'
-        },
-        src: [
-          'docs/assets/js/vendor/less.min.js',
-          'docs/assets/js/vendor/jszip.min.js',
-          'docs/assets/js/vendor/uglify.min.js',
-          'docs/assets/js/vendor/blob.js',
-          'docs/assets/js/vendor/filesaver.js',
-          'docs/assets/js/raw-files.min.js',
-          'docs/assets/js/src/customizer.js'
-        ],
+        src: configBridge.paths.customizerJs,
         dest: 'docs/assets/js/customize.min.js'
       },
-      docsJs: {
-        options: {
-          preserveComments: 'some'
-        },
-        src: [
-          'docs/assets/js/vendor/holder.js',
-          'docs/assets/js/src/application.js'
-        ],
+      docs: {
+        src: configBridge.paths.docsJs,
         dest: 'docs/assets/js/docs.min.js'
       }
     },
 
-    qunit: {
-      options: {
-        inject: 'js/tests/unit/phantom.js'
-      },
-      files: 'js/tests/index.html'
-    },
-
     less: {
-      compileCore: {
-        options: {
-          strictMath: true,
-          sourceMap: true,
-          outputSourceFiles: true,
-          sourceMapURL: '<%= pkg.name %>.css.map',
-          sourceMapFilename: 'dist/css/<%= pkg.name %>.css.map'
-        },
-        files: {
-          'dist/css/<%= pkg.name %>.css': 'less/bootstrap.less'
-        }
-      },
-      compileForce: {
-        options: {
-          strictMath: true,
-          sourceMap: true,
-          outputSourceFiles: true,
-          sourceMapURL: '<%= pkg.name %>-force.css.map',
-          sourceMapFilename: 'dist/css/<%= pkg.name %>-force.css.map'
-        },
-        files: {
-          'dist/css/<%= pkg.name %>-force.css': 'less/bootstrap-force.less'
-        }
-      },
-      compileFont: {
-        options: {
-          strictMath: true,
-          sourceMap: true,
-          outputSourceFiles: true,
-          sourceMapURL: '<%= pkg.name %>-font.css.map',
-          sourceMapFilename: 'dist/css/<%= pkg.name %>-font.css.map'
-        },
-        files: {
-          'dist/css/<%= pkg.name %>-font.css': 'less/bootstrap-font.less'
-        }
-      },
-      compileTheme: {
-        options: {
-          strictMath: true,
-          sourceMap: true,
-          outputSourceFiles: true,
-          sourceMapURL: '<%= pkg.name %>-theme.css.map',
-          sourceMapFilename: 'dist/css/<%= pkg.name %>-theme.css.map'
-        },
-        files: {
-          'dist/css/<%= pkg.name %>-theme.css': 'less/theme.less'
-        }
-      },
-      minify: {
-        options: {
-          cleancss: true,
-          report: 'min'
-        },
-        files: {
-          'dist/css/<%= pkg.name %>.min.css': 'dist/css/<%= pkg.name %>.css',
-          'dist/css/<%= pkg.name %>-force.min.css': 'dist/css/<%= pkg.name %>-force.css',
-          'dist/css/<%= pkg.name %>-rtl.min.css': 'dist/css/<%= pkg.name %>-rtl.css',
-          'dist/css/<%= pkg.name %>-theme.min.css': 'dist/css/<%= pkg.name %>-theme.css'
-        }
-      }
-    },
-
-    autoprefixer: {
       options: {
-        browsers: ['last 2 versions', 'ie 8', 'ie 9', 'android 2.3', 'android 4', 'opera 12']
+        ieCompat: true,
+        strictMath: true,
+        sourceMap: true,
+        outputSourceFiles: true
       },
       core: {
         options: {
-          map: true
+          sourceMapURL: '<%= pkg.name %>.css.map',
+          sourceMapFilename: 'dist/css/<%= pkg.name %>.css.map'
         },
+        src: 'less/bootstrap.less',
+        dest: 'dist/css/<%= pkg.name %>.css'
+      },
+      theme: {
+        options: {
+          sourceMapURL: '<%= pkg.name %>-theme.css.map',
+          sourceMapFilename: 'dist/css/<%= pkg.name %>-theme.css.map'
+        },
+        src: 'less/theme.less',
+        dest: 'dist/css/<%= pkg.name %>-theme.css'
+      },
+      docs: {
+        options: {
+          sourceMapURL: 'docs.css.map',
+          sourceMapFilename: 'docs/assets/css/docs.css.map'
+        },
+        src: 'docs/assets/less/docs.less',
+        dest: 'docs/assets/css/docs.css'
+      },
+      docsIe: {
+        options: {
+          sourceMap: false
+        },
+        src: 'docs/assets/less/ie10-viewport-bug-workaround.less',
+        dest: 'docs/assets/css/ie10-viewport-bug-workaround.css'
+      }
+    },
+
+    postcss: {
+      options: {
+        map: {
+          inline: false,
+          sourcesContent: true
+        },
+        processors: [
+          require('autoprefixer')(configBridge.config.autoprefixer)
+        ]
+      },
+      core: {
         src: 'dist/css/<%= pkg.name %>.css'
       },
       force: {
@@ -232,15 +207,15 @@ module.exports = function (grunt) {
         src: 'dist/css/<%= pkg.name %>-force.css'
       },
       theme: {
-        options: {
-          map: true
-        },
         src: 'dist/css/<%= pkg.name %>-theme.css'
       },
       docs: {
         src: 'docs/assets/css/src/docs.css'
       },
       examples: {
+        options: {
+          map: false
+        },
         expand: true,
         cwd: 'docs/examples/',
         src: ['**/*.css'],
@@ -248,98 +223,60 @@ module.exports = function (grunt) {
       }
     },
 
-    css_flip: {
-      rtl: {
-        files: {
-          'dist/css/<%= pkg.name %>-rtl.css': 'dist/css/<%= pkg.name %>.css'
-        }
-      }
-    },
-
-    csslint: {
+    stylelint: {
       options: {
-        csslintrc: 'less/.csslintrc'
+        configFile: 'grunt/.stylelintrc',
+        reportNeedlessDisables: false
       },
-      src: [
-        'dist/css/bootstrap.css',
-        'dist/css/bootstrap-theme.css'
+      dist: [
+        'less/**/*.less'
+      ],
+      docs: [
+        'docs/assets/less/**/*.less'
       ],
       examples: [
         'docs/examples/**/*.css'
-      ],
-      docs: {
-        options: {
-          ids: false,
-          'overqualified-elements': false
-        },
-        src: 'docs/assets/css/src/docs.css'
-      }
+      ]
     },
 
     cssmin: {
       options: {
-        keepSpecialComments: '*',
-        noAdvanced: true, // turn advanced optimizations off until the issue is fixed in clean-css
-        report: 'min',
-        compatibility: 'ie8'
-      },
-      docs: {
-        src: [
-          'docs/assets/css/src/docs.css',
-          'docs/assets/css/src/pygments-manni.css'
-        ],
-        dest: 'docs/assets/css/docs.min.css'
-      }
-    },
-
-    usebanner: {
-      options: {
-        position: 'top',
-        banner: '<%= banner %>'
-      },
-      files: {
-        src: 'dist/css/*.css'
-      }
-    },
-
-    csscomb: {
-      options: {
-        config: 'less/.csscomb.json'
-      },
-      dist: {
-        expand: true,
-        cwd: 'dist/css/',
-        src: ['*.css', '!*.min.css'],
-        dest: 'dist/css/'
-      },
-      examples: {
-        expand: true,
-        cwd: 'docs/examples/',
-        src: '**/*.css',
-        dest: 'docs/examples/'
-      },
-      docs: {
-        files: {
-          'docs/assets/css/src/docs.css': 'docs/assets/css/src/docs.css'
+        compatibility: 'ie8',
+        sourceMap: true,
+        sourceMapInlineSources: true,
+        level: {
+          1: {
+            specialComments: 'all'
+          }
         }
+      },
+      core: {
+        src: 'dist/css/<%= pkg.name %>.css',
+        dest: 'dist/css/<%= pkg.name %>.min.css'
+      },
+      theme: {
+        src: 'dist/css/<%= pkg.name %>-theme.css',
+        dest: 'dist/css/<%= pkg.name %>-theme.min.css'
+      },
+      docs: {
+        src: 'docs/assets/css/docs.css',
+        dest: 'docs/assets/css/docs.min.css'
       }
     },
 
     copy: {
       fonts: {
         expand: true,
-        src: 'fonts/*',
+        src: 'fonts/**',
         dest: 'dist/'
       },
       docs: {
         expand: true,
-        cwd: './dist',
+        cwd: 'dist/',
         src: [
-          '{css,js}/*.min.*',
-          'css/*.map',
-          'fonts/*'
+          '**/*'
         ],
-        dest: 'docs/dist'
+        dest: 'docs/dist/'
       }
     },
 
@@ -353,155 +290,148 @@ module.exports = function (grunt) {
     },
 
     jekyll: {
-      docs: {}
-    },
-
-    jade: {
-      compile: {
+      options: {
+        bundleExec: true,
+        config: '_config.yml',
+        incremental: false
+      },
+      docs: {},
+      github: {
         options: {
-          pretty: true,
-          data: function () {
-            var filePath = path.join(__dirname, 'less/variables.less');
-            var fileContent = fs.readFileSync(filePath, {encoding: 'utf8'});
-            var parser = new BsLessdocParser(fileContent);
-            return {sections: parser.parseFile()};
-          }
-        },
-        files: {
-          'docs/_includes/customizer-variables.html': 'docs/jade/customizer-variables.jade',
-          'docs/_includes/nav-customize.html': 'docs/jade/customizer-nav.jade'
+          raw: 'github: true'
         }
       }
     },
 
-    validation: {
+    pug: {
       options: {
-        charset: 'utf-8',
-        doctype: 'HTML5',
-        failHard: true,
-        reset: true,
-        relaxerror: [
-          'Bad value X-UA-Compatible for attribute http-equiv on element meta.',
-          'Element img is missing required attribute src.'
-        ]
+        pretty: true,
+        data: getLessVarsData
       },
-      files: {
-        src: '_gh_pages/**/*.html'
+      customizerVars: {
+        src: 'docs/_pug/customizer-variables.pug',
+        dest: 'docs/_includes/customizer-variables.html'
+      },
+      customizerNav: {
+        src: 'docs/_pug/customizer-nav.pug',
+        dest: 'docs/_includes/nav/customize.html'
       }
+    },
+
+    htmllint: {
+      options: {
+        ignore: [
+          'Element "img" is missing required attribute "src".'
+        ],
+        noLangDetect: true
+      },
+      src: ['_gh_pages/**/*.html', 'js/tests/**/*.html']
     },
 
     watch: {
       src: {
-        files: '<%= jshint.src.src %>',
-        tasks: ['jshint:src', 'qunit']
+        files: '<%= jshint.core.src %>',
+        tasks: ['jshint:core', 'exec:karma', 'concat']
       },
       test: {
         files: '<%= jshint.test.src %>',
-        tasks: ['jshint:test', 'qunit']
+        tasks: ['jshint:test', 'exec:karma']
       },
       less: {
-        files: 'less/*.less',
-        tasks: 'less'
-      }
-    },
-
-    sed: {
-      versionNumber: {
-        pattern: (function () {
-          var old = grunt.option('oldver');
-          return old ? RegExp.quote(old) : old;
-        })(),
-        replacement: grunt.option('newver'),
-        recursive: true
+        files: 'less/**/*.less',
+        tasks: ['less', 'copy']
       },
-      removeDoubleNamespace: {
-        path: 'dist/css/<%= pkg.name %>-force.css',
-        pattern: '.force .force',
-        replacement: '.force',
-        recursive: false
-      }
-    },
-
-    'saucelabs-qunit': {
-      all: {
-        options: {
-          build: process.env.TRAVIS_JOB_ID,
-          concurrency: 10,
-          urls: ['http://127.0.0.1:3000/js/tests/index.html'],
-          browsers: grunt.file.readYAML('test-infra/sauce_browsers.yml')
-        }
+      docs: {
+        files: 'docs/assets/less/**/*.less',
+        tasks: ['less']
       }
     },
 
     exec: {
-      npmUpdate: {
-        command: 'npm update'
+      browserstack: {
+        command: 'cross-env BROWSER=true karma start grunt/karma.conf.js'
       },
-      npmShrinkWrap: {
-        command: 'npm shrinkwrap --dev'
+      karma: {
+        command: 'karma start grunt/karma.conf.js'
       }
     }
   });
 
 
   // These plugins provide necessary tasks.
-  require('load-grunt-tasks')(grunt, {scope: 'devDependencies'});
+  require('load-grunt-tasks')(grunt, { scope: 'devDependencies' });
   require('time-grunt')(grunt);
 
   // Docs HTML validation task
-  grunt.registerTask('validate-html', ['jekyll', 'validation']);
+  grunt.registerTask('validate-html', ['jekyll:docs', 'htmllint']);
+
+  var runSubset = function (subset) {
+    return !process.env.TWBS_TEST || process.env.TWBS_TEST === subset;
+  };
+  var isUndefOrNonZero = function (val) {
+    return typeof val === 'undefined' || val !== '0';
+  };
 
   // Test task.
   var testSubtasks = [];
   // Skip core tests if running a different subset of the test suite
-  if (!process.env.TWBS_TEST || process.env.TWBS_TEST === 'core') {
-    testSubtasks = testSubtasks.concat(['dist-css', 'csslint', 'jshint', 'jscs', 'qunit', 'build-customizer-html']);
+  if (runSubset('core')) {
+    testSubtasks = testSubtasks.concat(['dist-css', 'dist-js', 'stylelint:dist', 'test-js', 'docs']);
   }
   // Skip HTML validation if running a different subset of the test suite
-  if (!process.env.TWBS_TEST || process.env.TWBS_TEST === 'validate-html') {
+  if (runSubset('validate-html') &&
+      // Skip HTML5 validator on Travis when [skip validator] is in the commit message
+      isUndefOrNonZero(process.env.TWBS_DO_VALIDATOR)) {
     testSubtasks.push('validate-html');
   }
-  // Only run Sauce Labs tests if there's a Sauce access key
-  if (typeof process.env.SAUCE_ACCESS_KEY !== 'undefined' &&
-      // Skip Sauce if running a different subset of the test suite
-      (!process.env.TWBS_TEST || process.env.TWBS_TEST === 'sauce-js-unit')) {
-    testSubtasks.push('connect');
-    testSubtasks.push('saucelabs-qunit');
+  // Only run BrowserStack tests if there's a BrowserStack access key
+  if (typeof process.env.BROWSER_STACK_USERNAME !== 'undefined' &&
+      // Skip BrowserStack if running a different subset of the test suite
+      runSubset('browserstack') &&
+      // Skip BrowserStack on Travis when [skip browserstack] is in the commit message
+      isUndefOrNonZero(process.env.TWBS_DO_BROWSERSTACK)) {
+    testSubtasks.push('exec:browserstack');
   }
+
   grunt.registerTask('test', testSubtasks);
+  grunt.registerTask('test-js', ['jshint:core', 'jshint:test', 'jshint:grunt', 'jscs:core', 'jscs:test', 'jscs:grunt', 'exec:karma']);
 
   // JS distribution task.
-  grunt.registerTask('dist-js', ['concat', 'uglify']);
+  grunt.registerTask('dist-js', ['concat', 'uglify:core', 'commonjs']);
 
   // CSS distribution task.
-  grunt.registerTask('less-compile', ['less:compileCore', 'less:compileForce', 'less:compileFont', 'less:compileTheme']);
-  grunt.registerTask('dist-css', ['less-compile', 'autoprefixer', 'sed:removeDoubleNamespace', 'css_flip', 'usebanner', 'csscomb', 'less:minify', 'cssmin']);
-
-  // Docs distribution task.
-  grunt.registerTask('dist-docs', 'copy:docs');
+  grunt.registerTask('dist-css', ['less:core', 'less:theme', 'postcss:core', 'postcss:theme', 'cssmin:core', 'cssmin:theme']);
 
   // Full distribution task.
-  grunt.registerTask('dist', ['clean', 'dist-css', 'copy:fonts', 'dist-js', 'dist-docs']);
+  grunt.registerTask('dist', ['clean:dist', 'dist-css', 'copy:fonts', 'dist-js']);
 
   // Default task.
-  grunt.registerTask('default', ['test', 'dist', 'build-glyphicons-data', 'build-customizer', 'update-shrinkwrap']);
+  grunt.registerTask('default', ['clean:dist', 'copy:fonts', 'test']);
 
-  // Version numbering task.
-  // grunt change-version-number --oldver=A.B.C --newver=X.Y.Z
-  // This can be overzealous, so its changes should always be manually reviewed!
-  grunt.registerTask('change-version-number', 'sed:versionNumber');
-
-  grunt.registerTask('build-glyphicons-data', generateGlyphiconsData);
+  grunt.registerTask('build-glyphicons-data', function () {
+    generateGlyphiconsData.call(this, grunt);
+  });
 
   // task for building customizer
   grunt.registerTask('build-customizer', ['build-customizer-html', 'build-raw-files']);
-  grunt.registerTask('build-customizer-html', 'jade');
+  grunt.registerTask('build-customizer-html', 'pug');
   grunt.registerTask('build-raw-files', 'Add scripts/less files to customizer.', function () {
     var banner = grunt.template.process('<%= banner %>');
-    generateRawFiles(banner);
+    generateRawFiles(grunt, banner);
   });
 
-  // Task for updating the npm packages used by the Travis build.
-  grunt.registerTask('update-shrinkwrap', ['exec:npmUpdate', 'exec:npmShrinkWrap', '_update-shrinkwrap']);
-  grunt.registerTask('_update-shrinkwrap', function () { updateShrinkwrap.call(this, grunt); });
+  grunt.registerTask('commonjs', 'Generate CommonJS entrypoint module in dist dir.', function () {
+    var srcFiles = grunt.config.get('concat.core.src');
+    var destFilepath = 'dist/js/npm.js';
+    generateCommonJSModule(grunt, srcFiles, destFilepath);
+  });
+
+  // Docs task.
+  grunt.registerTask('docs-css', ['less:docs', 'less:docsIe', 'postcss:docs', 'postcss:examples', 'cssmin:docs']);
+  grunt.registerTask('lint-docs-css', ['stylelint:docs', 'stylelint:examples']);
+  grunt.registerTask('docs-js', ['uglify:docs', 'uglify:customize']);
+  grunt.registerTask('lint-docs-js', ['jshint:assets', 'jscs:assets']);
+  grunt.registerTask('docs', ['docs-css', 'lint-docs-css', 'docs-js', 'lint-docs-js', 'clean:docs', 'copy:docs', 'build-glyphicons-data', 'build-customizer']);
+
+  grunt.registerTask('prep-release', ['dist', 'docs', 'jekyll:github']);
 };
