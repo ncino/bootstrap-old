@@ -170,6 +170,14 @@ module.exports = function (grunt) {
         src: 'less/theme.less',
         dest: 'dist/css/<%= pkg.name %>-theme.css'
       },
+      force: {
+        src: 'less/<%= pkg.name %>-force.less',
+        dest: 'dist/css/<%= pkg.name %>-force.css'
+      },
+      font: {
+        src: 'less/<%= pkg.name %>-font.less',
+        dest: 'dist/css/<%= pkg.name %>-font.css'
+      },
       docs: {
         options: {
           sourceMapURL: 'docs.css.map',
@@ -257,6 +265,14 @@ module.exports = function (grunt) {
       theme: {
         src: 'dist/css/<%= pkg.name %>-theme.css',
         dest: 'dist/css/<%= pkg.name %>-theme.min.css'
+      },
+      force: {
+        src: 'dist/css/<%- pkg.name %>-force.css',
+        dest: 'dist/css/<%- pkg.name %>-force.min.css',
+      },
+      font: {
+        src: 'dist/css/<%- pkg.name %>-font.css',
+        dest: 'dist/css/<%- pkg.name %>-font.min.css',
       },
       docs: {
         src: 'docs/assets/css/docs.css',
@@ -400,7 +416,7 @@ module.exports = function (grunt) {
   grunt.registerTask('dist-js', ['concat', 'uglify:core', 'commonjs']);
 
   // CSS distribution task.
-  grunt.registerTask('dist-css', ['less:core', 'less:theme', 'postcss:core', 'postcss:theme', 'cssmin:core', 'cssmin:theme']);
+  grunt.registerTask('dist-css', ['less:core', 'less:theme', 'less:force', 'less:font', 'postcss:core', 'postcss:theme', 'cssmin:core', 'cssmin:theme', 'cssmin:force', 'cssmin:font']);
 
   // Full distribution task.
   grunt.registerTask('dist', ['clean:dist', 'dist-css', 'copy:fonts', 'dist-js']);
