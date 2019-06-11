@@ -1,15 +1,17 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
+    <!-- Meta, title, CSS, favicons, etc. -->
     {% include header.html %}
   </head>
   <body>
-    {% include skippy.html %}
-    {% include v4.html %}
+    <a class="sr-only sr-only-focusable" href="#content">Skip to main content</a>
 
-    {% include nav/main.html %}
+    <!-- Docs master nav -->
+    {% include nav-main.html %}
 
-    <div class="bs-docs-header" id="content" tabindex="-1">
+    <!-- Docs page layout -->
+    <div class="bs-docs-header" id="content">
       <div class="container">
         <h1>{{ page.title }}</h1>
         <p>{{ page.lead }}</p>
@@ -20,45 +22,35 @@
     <div class="container bs-docs-container">
 
       <div class="row">
-        <div class="col-md-{% if page.fullwidth == true %}12{% else %}9{% endif %}" role="main">
+        <div class="col-md-9" role="main">
           {{ content }}
         </div>
-        {% unless page.fullwidth == true %}
-        <div class="col-md-3" role="complementary">
-          <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm">
-            <form class="bs-docs-search">
-              <input type="search" class="form-control" id="search-input" placeholder="Search..." aria-label="Search for..." autocomplete="off">
-            </form>
-
+        <div class="col-md-3">
+          <div class="bs-docs-sidebar hidden-print" role="complementary">
             <ul class="nav bs-docs-sidenav">
               {% if page.slug == "getting-started" %}
-                {% include nav/getting-started.html %}
+                {% include nav-getting-started.html %}
               {% elsif page.slug == "css" %}
-                {% include nav/css.html %}
+                {% include nav-css.html %}
               {% elsif page.slug == "components" %}
-                {% include nav/components.html %}
+                {% include nav-components.html %}
               {% elsif page.slug == "js" %}
-                {% include nav/javascript.html %}
+                {% include nav-javascript.html %}
               {% elsif page.slug == "customize" %}
-                {% include nav/customize.html %}
+                {% include nav-customize.html %}
               {% elsif page.slug == "about" %}
-                {% include nav/about.html %}
+                {% include nav-about.html %}
               {% elsif page.slug == "migration" %}
-                {% include nav/migration.html %}
+                {% include nav-migration.html %}
               {% endif %}
             </ul>
             <a class="back-to-top" href="#top">
               Back to top
             </a>
-            {% if page.slug == "css" or page.slug == "components" or page.slug == "js" %}
-            <a href="#" class="bs-docs-theme-toggle" role="button">
-              Preview theme
-            </a>
-            {% endif %}
-          </nav>
+          </div>
         </div>
-        {% endunless %}
       </div>
+
     </div>
 
     {% include footer.html %}
