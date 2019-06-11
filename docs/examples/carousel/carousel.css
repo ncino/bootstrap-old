@@ -1,11 +1,12 @@
 /* GLOBAL STYLES
- * Padding below the footer and lighter body text
-* -------------------------------------------------- */
+-------------------------------------------------- */
+/* Padding below the footer and lighter body text */
 
 body {
   padding-bottom: 40px;
   color: #5a5a5a;
 }
+
 
 
 /* CUSTOMIZE THE NAVBAR
@@ -21,16 +22,13 @@ body {
 }
 
 /* Flip around the padding for proper display in narrow viewports */
-.navbar-wrapper > .container {
+.navbar-wrapper .container {
   padding-right: 0;
   padding-left: 0;
 }
 .navbar-wrapper .navbar {
   padding-right: 15px;
   padding-left: 15px;
-}
-.navbar-wrapper .navbar .container {
-  width: auto;
 }
 
 
@@ -42,8 +40,9 @@ body {
   height: 500px;
   margin-bottom: 60px;
 }
+/* Since positioning the image, we need to help out the caption */
 .carousel-caption {
-  z-index: 10; /* Since positioning the image, we need to help out the caption */
+  z-index: 10;
 }
 
 /* Declare heights because of positioning of img element */
@@ -60,8 +59,15 @@ body {
 }
 
 
+
 /* MARKETING CONTENT
 -------------------------------------------------- */
+
+/* Pad the edges of the mobile views a bit */
+.marketing {
+  padding-right: 15px;
+  padding-left: 15px;
+}
 
 /* Center align the text within the three columns below the carousel */
 .marketing .col-lg-4 {
@@ -69,7 +75,7 @@ body {
   text-align: center;
 }
 .marketing h2 {
-  font-weight: 400;
+  font-weight: normal;
 }
 .marketing .col-lg-4 p {
   margin-right: 10px;
@@ -92,10 +98,18 @@ body {
 }
 
 
+
 /* RESPONSIVE CSS
 -------------------------------------------------- */
 
 @media (min-width: 768px) {
+
+  /* Remove the edge padding needed for mobile */
+  .marketing {
+    padding-right: 0;
+    padding-left: 0;
+  }
+
   /* Navbar positioning foo */
   .navbar-wrapper {
     margin-top: 20px;
@@ -107,7 +121,11 @@ body {
   .navbar-wrapper .navbar {
     padding-right: 0;
     padding-left: 0;
-    border-radius: 4px; /* The navbar becomes detached from the top, so we round the corners */
+  }
+
+  /* The navbar becomes detached from the top, so we round the corners */
+  .navbar-wrapper .navbar {
+    border-radius: 4px;
   }
 
   /* Bump up size of carousel content */
