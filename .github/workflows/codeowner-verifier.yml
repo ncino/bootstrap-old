@@ -1,0 +1,30 @@
+name: 'Codeowner Verifier Workflow'
+
+on: pull_request
+
+jobs:
+  codeowner-verifier-workflow:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3.0.2
+
+      - name: Identify Changed Files
+        id: diff
+        uses: jitterbit/get-changed-files@v1
+        continue-on-error: true
+
+      - name: Codeowner Verifier
+        id: codeownerVerifier
+        uses: ncino/codeowner-verifier@v1.1
+        with:
+          changedFiles: ${{ steps.diff.outputs.all }}
+          ignoreList: '.git/ .sfdx/ .idea/ .vscode/ src/dependencies/'
+        env:
+          GITHUB_TOKEN: ${{ secrets.DEVOPS_GITHUB_TOKEN }}
+
+      - name: Finish and Output Time
+        run: |
+          echo "Codeowner Verifier has completed."
+          echo "Time: ${{ steps.codeownerVerifier.outputs.timestamp }}"
